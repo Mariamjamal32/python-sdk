@@ -50,19 +50,19 @@ class ConditionTreeEvaluatorTests(base.BaseTest):
   def test_evaluate__returns_true(self):
     """ Test that evaluate returns True when the leaf condition evaluator returns True. """
 
-    self.assertStrictTrue(self.condition_tree_evaluator.evaluate(conditionA, lambda a: True))
+    self.assertStrictTrue(self.condition_tree_evaluator.evaluate(conditionA, lambda a, b: True))
 
   def test_evaluate__returns_false(self):
     """ Test that evaluate returns False when the leaf condition evaluator returns False. """
 
-    self.assertStrictFalse(self.condition_tree_evaluator.evaluate(conditionA, lambda a: False))
+    self.assertStrictFalse(self.condition_tree_evaluator.evaluate(conditionA, lambda a, b: False))
 
   def test_and_evaluator__returns_true(self):
     """ Test that and_evaluator returns True when all conditions evaluate to True. """
 
     self.assertStrictTrue(self.condition_tree_evaluator.evaluate(
       ['and', conditionA, conditionB],
-      lambda a: True
+      lambda a, b: True
     ))
 
   def test_and_evaluator__returns_false(self):
@@ -72,7 +72,7 @@ class ConditionTreeEvaluatorTests(base.BaseTest):
 
     self.assertStrictFalse(self.condition_tree_evaluator.evaluate(
       ['and', conditionA, conditionB],
-      lambda a: leafEvaluator()
+      lambda a, b: leafEvaluator()
     ))
 
   def test_and_evaluator__returns_null__when_all_null(self):
@@ -80,7 +80,7 @@ class ConditionTreeEvaluatorTests(base.BaseTest):
 
     self.assertIsNone(self.condition_tree_evaluator.evaluate(
       ['and', conditionA, conditionB],
-      lambda a: None
+      lambda a, b: None
     ))
 
   def test_and_evaluator__returns_null__when_trues_and_null(self):
@@ -90,14 +90,14 @@ class ConditionTreeEvaluatorTests(base.BaseTest):
 
     self.assertIsNone(self.condition_tree_evaluator.evaluate(
       ['and', conditionA, conditionB],
-      lambda a: leafEvaluator()
+      lambda a, b: leafEvaluator()
     ))
 
     leafEvaluator = mock.MagicMock(side_effect=[None, True])
 
     self.assertIsNone(self.condition_tree_evaluator.evaluate(
       ['and', conditionA, conditionB],
-      lambda a: leafEvaluator()
+      lambda a, b: leafEvaluator()
     ))
 
   def test_and_evaluator__returns_false__when_falses_and_null(self):
@@ -107,14 +107,14 @@ class ConditionTreeEvaluatorTests(base.BaseTest):
 
     self.assertStrictFalse(self.condition_tree_evaluator.evaluate(
       ['and', conditionA, conditionB],
-      lambda a: leafEvaluator()
+      lambda a, b: leafEvaluator()
     ))
 
     leafEvaluator = mock.MagicMock(side_effect=[None, False])
 
     self.assertStrictFalse(self.condition_tree_evaluator.evaluate(
       ['and', conditionA, conditionB],
-      lambda a: leafEvaluator()
+      lambda a, b: leafEvaluator()
     ))
 
   def test_and_evaluator__returns_false__when_trues_falses_and_null(self):
@@ -124,7 +124,7 @@ class ConditionTreeEvaluatorTests(base.BaseTest):
 
     self.assertStrictFalse(self.condition_tree_evaluator.evaluate(
       ['and', conditionA, conditionB],
-      lambda a: leafEvaluator()
+      lambda a, b: leafEvaluator()
     ))
 
   def test_or_evaluator__returns_true__when_any_true(self):
@@ -134,7 +134,7 @@ class ConditionTreeEvaluatorTests(base.BaseTest):
 
     self.assertStrictTrue(self.condition_tree_evaluator.evaluate(
       ['or', conditionA, conditionB],
-      lambda a: leafEvaluator()
+      lambda a, b: leafEvaluator()
     ))
 
   def test_or_evaluator__returns_false__when_all_false(self):
@@ -142,7 +142,7 @@ class ConditionTreeEvaluatorTests(base.BaseTest):
 
     self.assertStrictFalse(self.condition_tree_evaluator.evaluate(
       ['or', conditionA, conditionB],
-      lambda a: False
+      lambda a, b: False
     ))
 
   def test_or_evaluator__returns_null__when_all_null(self):
@@ -150,7 +150,7 @@ class ConditionTreeEvaluatorTests(base.BaseTest):
 
     self.assertIsNone(self.condition_tree_evaluator.evaluate(
       ['or', conditionA, conditionB],
-      lambda a: None
+      lambda a, b: None
     ))
 
   def test_or_evaluator__returns_true__when_trues_and_null(self):
@@ -160,14 +160,14 @@ class ConditionTreeEvaluatorTests(base.BaseTest):
 
     self.assertStrictTrue(self.condition_tree_evaluator.evaluate(
       ['or', conditionA, conditionB],
-      lambda a: leafEvaluator()
+      lambda a, b: leafEvaluator()
     ))
 
     leafEvaluator = mock.MagicMock(side_effect=[True, None])
 
     self.assertStrictTrue(self.condition_tree_evaluator.evaluate(
       ['or', conditionA, conditionB],
-      lambda a: leafEvaluator()
+      lambda a, b: leafEvaluator()
     ))
 
   def test_or_evaluator__returns_null__when_falses_and_null(self):
@@ -177,14 +177,14 @@ class ConditionTreeEvaluatorTests(base.BaseTest):
 
     self.assertIsNone(self.condition_tree_evaluator.evaluate(
       ['or', conditionA, conditionB],
-      lambda a: leafEvaluator()
+      lambda a, b: leafEvaluator()
     ))
 
     leafEvaluator = mock.MagicMock(side_effect=[None, False])
 
     self.assertIsNone(self.condition_tree_evaluator.evaluate(
       ['or', conditionA, conditionB],
-      lambda a: leafEvaluator()
+      lambda a, b: leafEvaluator()
     ))
 
   def test_or_evaluator__returns_true__when_trues_falses_and_null(self):
@@ -194,7 +194,7 @@ class ConditionTreeEvaluatorTests(base.BaseTest):
 
     self.assertStrictTrue(self.condition_tree_evaluator.evaluate(
       ['or', conditionA, conditionB, conditionC],
-      lambda a: leafEvaluator()
+      lambda a, b: leafEvaluator()
     ))
 
   def test_not_evaluator__returns_true(self):
@@ -202,7 +202,7 @@ class ConditionTreeEvaluatorTests(base.BaseTest):
 
     self.assertStrictTrue(self.condition_tree_evaluator.evaluate(
       ['not', conditionA],
-      lambda a: False
+      lambda a, b: False
     ))
 
   def test_not_evaluator__returns_false(self):
@@ -210,7 +210,7 @@ class ConditionTreeEvaluatorTests(base.BaseTest):
 
     self.assertStrictFalse(self.condition_tree_evaluator.evaluate(
       ['not', conditionA],
-      lambda a: True
+      lambda a, b: True
     ))
 
   def test_not_evaluator_negates_first_condition__ignores_rest(self):
@@ -219,21 +219,21 @@ class ConditionTreeEvaluatorTests(base.BaseTest):
 
     self.assertStrictTrue(self.condition_tree_evaluator.evaluate(
       ['not', conditionA, conditionB, conditionC],
-      lambda a: leafEvaluator()
+      lambda a, b: leafEvaluator()
     ))
 
     leafEvaluator = mock.MagicMock(side_effect=[True, False, None])
 
     self.assertStrictFalse(self.condition_tree_evaluator.evaluate(
       ['not', conditionA, conditionB, conditionC],
-      lambda a: leafEvaluator()
+      lambda a, b: leafEvaluator()
     ))
 
     leafEvaluator = mock.MagicMock(side_effect=[None, True, False])
 
     self.assertIsNone(self.condition_tree_evaluator.evaluate(
       ['not', conditionA, conditionB, conditionC],
-      lambda a: leafEvaluator()
+      lambda a, b: leafEvaluator()
     ))
 
   def test_not_evaluator__returns_null__when_null(self):
@@ -241,7 +241,7 @@ class ConditionTreeEvaluatorTests(base.BaseTest):
 
     self.assertIsNone(self.condition_tree_evaluator.evaluate(
       ['not', conditionA],
-      lambda a: None
+      lambda a, b: None
     ))
 
   def test_not_evaluator__returns_null__when_there_are_no_operands(self):
@@ -249,7 +249,7 @@ class ConditionTreeEvaluatorTests(base.BaseTest):
 
     self.assertIsNone(self.condition_tree_evaluator.evaluate(
       ['not'],
-      lambda a: True
+      lambda a, b: True
     ))
 
   def test_evaluate_assumes__OR_operator__when_first_item_in_array_not_recognized_operator(self):
@@ -260,12 +260,12 @@ class ConditionTreeEvaluatorTests(base.BaseTest):
 
     self.assertStrictTrue(self.condition_tree_evaluator.evaluate(
       [conditionA, conditionB],
-      lambda a: leafEvaluator()
+      lambda a, b: leafEvaluator()
     ))
 
     self.assertStrictFalse(self.condition_tree_evaluator.evaluate(
       [conditionA, conditionB],
-      lambda a: False
+      lambda a, b: False
     ))
 
 browserConditionSafari = ['browser_type', 'safari', 'custom_attribute', 'exact']

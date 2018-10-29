@@ -14,28 +14,6 @@
 from . import condition as condition_helper
 
 
-def is_match(audience, attributes):
-  """ Given audience information and user attributes determine if user meets the conditions.
-
-  Args:
-    audience: Dict representing the audience.
-    attributes: Dict representing user attributes which will be used in determining if the audience conditions are met.
-
-  Return:
-    Boolean representing if user satisfies audience conditions or not.
-  """
-  condition_tree_evaluator = condition_helper.ConditionTreeEvaluator()
-  custom_attr_condition_evaluator = condition_helper.CustomAttributeConditionEvaluator(
-    audience.conditionList, attributes)
-
-  is_match = condition_tree_evaluator.evaluate(
-    audience.conditionStructure,
-    lambda index: custom_attr_condition_evaluator.evaluate(index)
-  )
-
-  return is_match or False
-
-
 def is_user_in_experiment(config, experiment, attributes):
   """ Determine for given experiment if user satisfies the audiences for the experiment.
 
@@ -50,17 +28,32 @@ def is_user_in_experiment(config, experiment, attributes):
   """
 
   # Return True in case there are no audiences
-  if not experiment.audienceIds:
+  audience_conditions = experiment.getAudienceConditionsOrIds()
+  if not audience_conditions or len(audience_conditions) is 0:
     return True
 
   if not attributes:
     attributes = {}
 
-  # Return True if conditions for any one audience are met
-  for audience_id in experiment.audienceIds:
-    audience = config.get_audience(audience_id)
+  def evaluate_custom_attr(audience, index):
+    custom_attr_condition_evaluator = condition_helper.CustomAttributeConditionEvaluator(
+      audience.conditionList, attributes)
 
-    if is_match(audience, attributes):
-      return True
+    return custom_attr_condition_evaluator.evaluate(index)
 
-  return False
+  def evaluate_audience(audiencesTree, audienceId):
+    audience = config.get_audience(audienceId)
+
+    condition_tree_evaluator = condition_helper.ConditionTreeEvaluator(audience)
+    return condition_tree_evaluator.evaluate(
+      audience.conditionStructure,
+      lambda audience, index: evaluate_custom_attr(audience, index)
+    )
+
+  condition_tree_evaluator = condition_helper.ConditionTreeEvaluator()
+  eval_result = condition_tree_evaluator.evaluate(
+    audience_conditions,
+    lambda i, audienceId: evaluate_audience(i, audienceId)
+  )
+
+  return eval_result or False

@@ -35,6 +35,9 @@ class ConditionMatchTypes(object):
 class ConditionTreeEvaluator(object):
   """ Class encapsulating methods to be used in audience condition tree evaluation. """
 
+  def __init__(self, audience=None):
+    self.audience_tree = audience
+
   def and_evaluator(self, conditions, leaf_evaluator):
     """ Evaluates a list of conditions as if the evaluator had been applied
     to each entry and the results AND-ed together
@@ -141,7 +144,7 @@ class ConditionTreeEvaluator(object):
         return self.EVALUATORS_BY_OPERATOR_TYPE[ConditionOperatorTypes.OR](self, conditions, leaf_evaluator)
 
     leaf_condition = conditions
-    return leaf_evaluator(leaf_condition)
+    return leaf_evaluator(self.audience_tree, leaf_condition)
 
 
 class CustomAttributeConditionEvaluator(object):
