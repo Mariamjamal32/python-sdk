@@ -217,3 +217,29 @@ class BatchEventProcessor(EventProcessor):
       return
 
     self._disposed = True
+
+
+class ForwardingEventProcessor(EventProcessor):
+
+  def __init__(self, event_dispatcher, logger, notification_center=None):
+    self.event_dispatcher = event_dispatcher
+    self.logger = logger
+    self.notification_center = notification_center
+
+  def process(self, event):
+    if not isinstance(event, UserEvent):
+      # TODO: log error
+      return
+
+    log_event = EventFactory.create_log_event(event, self.logger)
+
+    if self.notification_center is not None:
+      self.notification_center.send_notifications(
+        enums.NotificationTypes.LOG_EVENT,
+        log_event
+      )
+
+    try:
+      self.event_dispatcher.dispatch_event(log_event)
+    except Exception, e:
+      self.logger.exception('Error dispatching event: ' + str(log_event) + ' ' + str(e))

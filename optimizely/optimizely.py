@@ -20,6 +20,9 @@ from . import logger as _logging
 from .config_manager import StaticConfigManager
 from .config_manager import PollingConfigManager
 from .error_handler import NoOpErrorHandler as noop_error_handler
+from .event.event_factory import EventFactory
+from .event.event_processor import ForwardingEventProcessor
+from .event.user_event_factory import UserEventFactory
 from .event_dispatcher import EventDispatcher as default_event_dispatcher
 from .helpers import enums
 from .helpers import validator
@@ -36,6 +39,7 @@ class Optimizely(object):
                error_handler=None,
                skip_json_validation=False,
                user_profile_service=None,
+               event_processor=None,
                sdk_key=None,
                config_manager=None,
                notification_center=None):
@@ -50,6 +54,7 @@ class Optimizely(object):
       skip_json_validation: Optional boolean param which allows skipping JSON schema validation upon object invocation.
                             By default JSON schema validation will be performed.
       user_profile_service: Optional component which provides methods to store and manage user profiles.
+      event_processor: Processes the given event(s) by creating LogEvent(s) and then dispatching it.
       sdk_key: Optional string uniquely identifying the datafile corresponding to project and environment combination.
                Must provide at least one of datafile or sdk_key.
       config_manager: Optional component which implements optimizely.config_manager.BaseConfigManager.
@@ -64,6 +69,9 @@ class Optimizely(object):
     self.error_handler = error_handler or noop_error_handler
     self.config_manager = config_manager
     self.notification_center = notification_center or NotificationCenter(self.logger)
+    self.event_processor = event_processor or ForwardingEventProcessor(self.event_dispatcher,
+                                                                        self.logger,
+                                                                        self.notification_center)
 
     try:
       self._validate_instantiation_options()
@@ -90,6 +98,7 @@ class Optimizely(object):
                                                   notification_center=self.notification_center,
                                                   skip_json_validation=skip_json_validation)
 
+    # TODO: remove it and delete test_event_builder file
     self.event_builder = event_builder.EventBuilder()
     self.decision_service = decision_service.DecisionService(self.logger, user_profile_service)
 
@@ -113,6 +122,9 @@ class Optimizely(object):
 
     if not validator.is_notification_center_valid(self.notification_center):
       raise exceptions.InvalidInputException(enums.Errors.INVALID_INPUT.format('notification_center'))
+
+    if not validator.is_event_processor_valid(self.event_processor):
+      raise exceptions.InvalidInputException(enums.Errors.INVALID_INPUT.format('event_processor'))
 
   def _validate_user_inputs(self, attributes=None, event_tags=None):
     """ Helper method to validate user inputs.
@@ -149,7 +161,7 @@ class Optimizely(object):
       attributes: Dict representing user attributes and values which need to be recorded.
     """
 
-    impression_event = self.event_builder.create_impression_event(
+    user_event = UserEventFactory.create_impression_event(
       project_config,
       experiment,
       variation.id,
@@ -157,18 +169,15 @@ class Optimizely(object):
       attributes
     )
 
-    self.logger.debug('Dispatching impression event to URL %s with params %s.' % (
-      impression_event.url,
-      impression_event.params
-    ))
+    self.event_processor.process(user_event)
 
-    try:
-      self.event_dispatcher.dispatch_event(impression_event)
-    except:
-      self.logger.exception('Unable to dispatch impression event!')
-
-    self.notification_center.send_notifications(enums.NotificationTypes.ACTIVATE,
-                                                experiment, user_id, attributes, variation, impression_event)
+    # Kept for backward compatibility.
+    # This notification is deprecated and new Decision notifications
+    # are sent via their respective method calls.
+    if len(self.notification_center.notification_listeners[enums.NotificationTypes.ACTIVATE]) > 0:
+      impression_event = EventFactory.create_log_event(user_event, self.logger)
+      self.notification_center.send_notifications(enums.NotificationTypes.ACTIVATE, experiment,
+                                                  user_id, attributes, variation, impression_event.__dict__)
 
   def _get_feature_variable_for_type(self,
                                      project_config,
@@ -359,24 +368,21 @@ class Optimizely(object):
       self.logger.info('Not tracking user "%s" for event "%s".' % (user_id, event_key))
       return
 
-    conversion_event = self.event_builder.create_conversion_event(
+    user_event = UserEventFactory.create_conversion_event(
       project_config,
       event_key,
       user_id,
       attributes,
       event_tags
     )
+
+    self.event_processor.process(user_event)
     self.logger.info('Tracking event "%s" for user "%s".' % (event_key, user_id))
-    self.logger.debug('Dispatching conversion event to URL %s with params %s.' % (
-      conversion_event.url,
-      conversion_event.params
-    ))
-    try:
-      self.event_dispatcher.dispatch_event(conversion_event)
-    except:
-      self.logger.exception('Unable to dispatch conversion event!')
-    self.notification_center.send_notifications(enums.NotificationTypes.TRACK, event_key, user_id,
-                                                attributes, event_tags, conversion_event)
+
+    if len(self.notification_center.notification_listeners[enums.NotificationTypes.TRACK]) > 0:
+      conversion_event = EventFactory.create_log_event(user_event, self.logger)
+      self.notification_center.send_notifications(enums.NotificationTypes.TRACK, event_key, user_id,
+                                                    attributes, event_tags, conversion_event.__dict__)
 
   def get_variation(self, experiment_key, user_id, attributes=None):
     """ Gets variation where user will be bucketed.
