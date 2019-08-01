@@ -17,6 +17,7 @@ from six.moves import queue
 
 from .entity.user_event import UserEvent
 from .event_factory import EventFactory
+from ..helpers import enums
 
 
 class EventProcessor(object):
@@ -31,6 +32,7 @@ class EventProcessor(object):
 class BatchEventProcessor(EventProcessor):
   """
   BatchEventProcessor is a batched implementation of the EventProcessor.
+
   The BatchEventProcessor maintains a single consumer thread that pulls events off of
   the blocking queue and buffers them for either a configured batch size or for a
   maximum duration before the resulting LogEvent is sent to the EventDispatcher.
@@ -49,12 +51,14 @@ class BatchEventProcessor(EventProcessor):
                 logger,
                 start,
                 event_queue=None,
+                notification_center=None,
                 batch_size=None,
                 flush_interval=None,
                 timeout_interval=None):
     self.event_dispatcher = event_dispatcher
     self.logger = logger
     self.event_queue = event_queue or queue.Queue(maxsize=self._DEFAULT_QUEUE_CAPACITY)
+    self.notification_center = notification_center
     self.batch_size = batch_size or self._DEFAULT_BATCH_SIZE
     self.flush_interval = flush_interval or self._DEFAULT_FLUSH_INTERVAL
     self.timeout_interval = timeout_interval or self._DEFAULT_TIMEOUT_INTERVAL
@@ -140,6 +144,12 @@ class BatchEventProcessor(EventProcessor):
 
     log_event = EventFactory.create_log_event(to_process_batch, self.logger)
 
+    if self.notification_center is not None:
+      self.notification_center.send_notifications(
+        enums.NotificationTypes.LOG_EVENT,
+        log_event
+      )
+
     try:
       self.event_dispatcher.dispatch_event(log_event)
     except Exception, e:
@@ -178,7 +188,9 @@ class BatchEventProcessor(EventProcessor):
 
     # Reset the deadline if starting a new batch.
     if len(self._current_batch) == 0:
-      self.flushing_interval_deadline = self._get_time_in_ms() + self._get_time_in_ms(self.flush_interval.total_seconds())
+      self.flushing_interval_deadline = self._get_time_in_ms() + self._get_time_in_ms(
+        self.flush_interval.total_seconds()
+      )
 
     with self.LOCK:
       self._current_batch.append(user_event)

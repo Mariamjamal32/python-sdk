@@ -18,10 +18,12 @@ from six.moves import queue
 
 from . import base
 from optimizely.logger import SimpleLogger
+from optimizely.event.log_event import LogEvent
 from optimizely.event.entity.visitor import Visitor
 from optimizely.event.entity.decision import Decision
 from optimizely.event.user_event_factory import UserEventFactory
 from optimizely.event.event_processor import BatchEventProcessor
+from optimizely.helpers import enums
 
 
 class CanonicalEvent(object):
@@ -116,6 +118,7 @@ class BatchEventProcessorTest(base.BaseTest):
     self.event_name = 'test_event'
     self.event_queue = queue.Queue(maxsize=self.DEFAULT_QUEUE_CAPACITY)
     self.optimizely.logger = SimpleLogger()
+    self.notification_center = self.optimizely.notification_center
 
   def tearDown(self):
     self._event_processor.stop()
@@ -129,6 +132,7 @@ class BatchEventProcessorTest(base.BaseTest):
                                                  logger,
                                                  True,
                                                  self.event_queue,
+                                                 self.optimizely.notification_center,
                                                  self.MAX_BATCH_SIZE,
                                                  timedelta(milliseconds=self.MAX_DURATION_MS),
                                                  timedelta(milliseconds=self.MAX_TIMEOUT_INTERVAL_MS)
@@ -289,3 +293,29 @@ class BatchEventProcessorTest(base.BaseTest):
     self.assertStrictFalse(self._event_processor.is_started)
 
     self.assertEqual(0, self._event_processor.event_queue.qsize())
+
+  def test_notification_center(self):
+
+    mock_event_dispatcher = mock.Mock()
+    callback_hit = [False]
+
+    def on_log_event(log_event):
+      self.assertStrictTrue(isinstance(log_event, LogEvent))
+      callback_hit[0] = True
+
+    self.optimizely.notification_center.add_notification_listener(
+      enums.NotificationTypes.LOG_EVENT, on_log_event
+    )
+
+    with mock.patch.object(self.optimizely, 'logger') as mock_config_logging:
+      self._set_event_processor(mock_event_dispatcher, mock_config_logging)
+
+    user_event = self._build_conversion_event(self.event_name, self.project_config)
+    self._event_processor.process(user_event)
+
+    self._event_processor.stop()
+
+    self.assertEqual(True, callback_hit[0])
+    self.assertEqual(1, len(self.optimizely.notification_center.notification_listeners[
+      enums.NotificationTypes.LOG_EVENT
+    ]))
