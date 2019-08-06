@@ -213,10 +213,11 @@ class BatchEventProcessor(EventProcessor):
 
     return False
 
-  def dispose(self):
+  def close(self):
     if self.disposed:
       return
 
+    self.stop()
     self._disposed = True
 
 

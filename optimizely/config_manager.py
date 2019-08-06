@@ -188,9 +188,15 @@ class PollingConfigManager(StaticConfigManager):
                                                   url_template or enums.ConfigManager.DATAFILE_URL_TEMPLATE)
         self.set_update_interval(update_interval)
         self.last_modified = None
+        self._disposed = False
+        self.control_flag = True
         self._polling_thread = threading.Thread(target=self._run)
         self._polling_thread.setDaemon(True)
         self._polling_thread.start()
+
+    @property
+    def disposed(self):
+      return self._disposed
 
     @staticmethod
     def get_datafile_url(sdk_key, url, url_template):
@@ -297,7 +303,7 @@ class PollingConfigManager(StaticConfigManager):
     def _run(self):
         """ Triggered as part of the thread which fetches the datafile and sleeps until next update interval. """
         try:
-          while self.is_running:
+          while self.is_running and self.control_flag and not self.disposed:
               self.fetch_datafile()
               time.sleep(self.update_interval)
         except (OSError, OverflowError) as err:
@@ -308,4 +314,15 @@ class PollingConfigManager(StaticConfigManager):
     def start(self):
         """ Start the config manager and the thread to periodically fetch datafile. """
         if not self.is_running:
+            self.control_flag = True
             self._polling_thread.start()
+
+    def stop(self):
+        self.control_flag = False
+
+    def close(self):
+        if self.disposed:
+          return
+
+        self.stop()
+        self._disposed = True

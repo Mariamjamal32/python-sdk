@@ -101,6 +101,11 @@ class Optimizely(object):
     # TODO: remove it and delete test_event_builder file
     self.event_builder = event_builder.EventBuilder()
     self.decision_service = decision_service.DecisionService(self.logger, user_profile_service)
+    self._disposed = False
+
+  @property
+  def disposed(self):
+    return self._disposed
 
   def _validate_instantiation_options(self):
     """ Helper method to validate all instantiation parameters.
@@ -746,3 +751,23 @@ class Optimizely(object):
 
     forced_variation = self.decision_service.get_forced_variation(project_config, experiment_key, user_id)
     return forced_variation.key if forced_variation else None
+
+  def close(self):
+    """ Checks if event_processor and config_manager are closeable and calls close on them. """
+
+    if self.disposed:
+      return
+
+    self._try_close(self.event_processor)
+    self._try_close(self.config_manager)
+
+    self.is_valid = False
+    self._disposed = True
+
+  def _try_close(self, obj):
+    """ Helper method which checks if obj implements close method and calls close() on it. """
+
+    if not callable(getattr(obj.__class__, 'close', None)):
+      return
+
+    obj.close()
