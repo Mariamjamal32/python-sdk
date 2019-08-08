@@ -11,8 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import abc
 import threading
 import time
+
 from datetime import timedelta
 from six.moves import queue
 
@@ -20,14 +22,16 @@ from .entity.user_event import UserEvent
 from .event_factory import EventFactory
 from ..helpers import enums
 
+ABC = abc.ABCMeta('ABC', (object,), {'__slots__': ()})
 
-class EventProcessor(object):
+
+class EventProcessor(ABC):
   """ Class encapsulating event_processor functionality. Override with your own processor
   providing process method. """
 
-  @staticmethod
+  @abc.abstractmethod
   def process(user_event):
-    pass  # pragma: no cover
+    pass
 
 
 class BatchEventProcessor(EventProcessor):
@@ -50,7 +54,7 @@ class BatchEventProcessor(EventProcessor):
   def __init__(self,
                 event_dispatcher,
                 logger,
-                start=False,
+                default_start=False,
                 event_queue=None,
                 notification_center=None,
                 batch_size=None,
@@ -67,7 +71,7 @@ class BatchEventProcessor(EventProcessor):
     self._is_started = False
     self._current_batch = list()
 
-    if start is True:
+    if default_start is True:
       self.start()
 
   @property
