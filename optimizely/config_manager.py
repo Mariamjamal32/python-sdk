@@ -21,6 +21,7 @@ from requests import exceptions as requests_exceptions
 from . import exceptions as optimizely_exceptions
 from . import logger as optimizely_logger
 from . import project_config
+from .closeable import Closeable
 from .error_handler import NoOpErrorHandler
 from .notification_center import NotificationCenter
 from .helpers import enums
@@ -29,7 +30,7 @@ from .helpers import validator
 ABC = abc.ABCMeta('ABC', (object,), {'__slots__': ()})
 
 
-class BaseConfigManager(ABC):
+class BaseConfigManager(ABC, Closeable):
     """ Base class for Optimizely's config manager. """
 
     def __init__(self,
@@ -318,6 +319,11 @@ class PollingConfigManager(StaticConfigManager):
             self._polling_thread.start()
 
     def stop(self):
+        if not self.is_running:
+          self.logger.warning('Not pausing. Manager has not been started.')
+          return
+
+        self.logger.info('Pausing project watcher.')
         self.control_flag = False
 
     def close(self):
@@ -325,4 +331,11 @@ class PollingConfigManager(StaticConfigManager):
           return
 
         self.stop()
+        # TODO: confirm timeout interval for closing thread
+        self._polling_thread.join(2)
+
+        if self.is_running:
+          self.logger.error('Timeout exceeded while attempting to close for 2000 ms.')
+
+        self.logger.warning('Stopping Manager.')
         self._disposed = True
