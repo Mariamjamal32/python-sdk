@@ -17,15 +17,15 @@ from datetime import timedelta
 from six.moves import queue
 
 from . import base
-from optimizely.logger import SimpleLogger
-from optimizely.event.log_event import LogEvent
-from optimizely.event.entity.visitor import Visitor
 from optimizely.event.entity.decision import Decision
-from optimizely.event.event_factory import EventFactory
-from optimizely.event.user_event_factory import UserEventFactory
+from optimizely.event.entity.visitor import Visitor
 from optimizely.event.event_processor import BatchEventProcessor
 from optimizely.event.event_processor import ForwardingEventProcessor
+from optimizely.event.log_event import LogEvent
+from optimizely.event.event_factory import EventFactory
+from optimizely.event.user_event_factory import UserEventFactory
 from optimizely.helpers import enums
+from optimizely.logger import SimpleLogger
 
 
 class CanonicalEvent(object):
@@ -123,7 +123,7 @@ class BatchEventProcessorTest(base.BaseTest):
     self.notification_center = self.optimizely.notification_center
 
   def tearDown(self):
-    self._event_processor.stop()
+    self._event_processor.close()
 
   def _build_conversion_event(self, event_name, project_config=None):
     config = project_config or self.project_config
@@ -134,10 +134,10 @@ class BatchEventProcessorTest(base.BaseTest):
                                                  logger,
                                                  True,
                                                  self.event_queue,
-                                                 self.optimizely.notification_center,
                                                  self.MAX_BATCH_SIZE,
                                                  timedelta(milliseconds=self.MAX_DURATION_MS),
-                                                 timedelta(milliseconds=self.MAX_TIMEOUT_INTERVAL_MS)
+                                                 timedelta(milliseconds=self.MAX_TIMEOUT_INTERVAL_MS),
+                                                 self.optimizely.notification_center
                                                 )
 
   def test_drain_on_close(self):
@@ -281,7 +281,7 @@ class BatchEventProcessorTest(base.BaseTest):
     time.sleep(1.5)
 
     self.assertStrictTrue(event_dispatcher.compare_events())
-    self._event_processor.stop()
+    self._event_processor.close()
 
     self._event_processor.process(user_event)
     mock_config_logging.debug.assert_called_with('Received user_event: ' + str(user_event))
@@ -290,7 +290,7 @@ class BatchEventProcessorTest(base.BaseTest):
     self._event_processor.start()
     self.assertStrictTrue(self._event_processor.is_started)
 
-    self._event_processor.stop()
+    self._event_processor.close()
     mock_config_logging.warning.assert_called_with('Stopping Scheduler.')
     self.assertStrictFalse(self._event_processor.is_started)
 
@@ -315,7 +315,7 @@ class BatchEventProcessorTest(base.BaseTest):
     user_event = self._build_conversion_event(self.event_name, self.project_config)
     self._event_processor.process(user_event)
 
-    self._event_processor.stop()
+    self._event_processor.close()
 
     self.assertEqual(True, callback_hit[0])
     self.assertEqual(1, len(self.optimizely.notification_center.notification_listeners[

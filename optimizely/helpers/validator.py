@@ -74,8 +74,10 @@ def is_config_manager_valid(config_manager):
 
 def is_event_processor_valid(event_processor):
   """ Given an event_processor, determine if it is valid or not i.e. provides a process method.
+
   Args:
     event_processor: Provides a process method to create user events and then send requests.
+
   Returns:
     Boolean depending upon whether event_processor is valid or not.
   """

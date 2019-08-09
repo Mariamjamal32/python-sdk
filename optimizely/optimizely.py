@@ -17,15 +17,12 @@ from . import entities
 from . import event_builder
 from . import exceptions
 from . import logger as _logging
-from .config_manager import StaticConfigManager
-from .config_manager import PollingConfigManager
+from .config_manager import StaticConfigManager, PollingConfigManager
 from .error_handler import NoOpErrorHandler as noop_error_handler
-from .event.event_factory import EventFactory
+from .event import event_factory, user_event_factory
 from .event.event_processor import ForwardingEventProcessor
-from .event.user_event_factory import UserEventFactory
 from .event_dispatcher import EventDispatcher as default_event_dispatcher
-from .helpers import enums
-from .helpers import validator
+from .helpers import enums, validator
 from .notification_center import NotificationCenter
 
 
@@ -39,10 +36,10 @@ class Optimizely(object):
                error_handler=None,
                skip_json_validation=False,
                user_profile_service=None,
-               event_processor=None,
                sdk_key=None,
                config_manager=None,
-               notification_center=None):
+               notification_center=None,
+               event_processor=None):
     """ Optimizely init method for managing Custom projects.
 
     Args:
@@ -54,13 +51,13 @@ class Optimizely(object):
       skip_json_validation: Optional boolean param which allows skipping JSON schema validation upon object invocation.
                             By default JSON schema validation will be performed.
       user_profile_service: Optional component which provides methods to store and manage user profiles.
-      event_processor: Processes the given event(s) by creating LogEvent(s) and then dispatching it.
       sdk_key: Optional string uniquely identifying the datafile corresponding to project and environment combination.
                Must provide at least one of datafile or sdk_key.
       config_manager: Optional component which implements optimizely.config_manager.BaseConfigManager.
       notification_center: Optional instance of notification_center.NotificationCenter. Useful when providing own
                            config_manager.BaseConfigManager implementation which can be using the
                            same NotificationCenter instance.
+      event_processor: Processes the given event(s) by creating LogEvent(s) and then dispatching it.
     """
     self.logger_name = '.'.join([__name__, self.__class__.__name__])
     self.is_valid = True
@@ -70,8 +67,8 @@ class Optimizely(object):
     self.config_manager = config_manager
     self.notification_center = notification_center or NotificationCenter(self.logger)
     self.event_processor = event_processor or ForwardingEventProcessor(self.event_dispatcher,
-                                                                        self.logger,
-                                                                        self.notification_center)
+                                                                       self.logger,
+                                                                       self.notification_center)
 
     try:
       self._validate_instantiation_options()
@@ -98,7 +95,6 @@ class Optimizely(object):
                                                   notification_center=self.notification_center,
                                                   skip_json_validation=skip_json_validation)
 
-    # TODO: remove it and delete test_event_builder file
     self.event_builder = event_builder.EventBuilder()
     self.decision_service = decision_service.DecisionService(self.logger, user_profile_service)
     self._disposed = False
@@ -166,7 +162,7 @@ class Optimizely(object):
       attributes: Dict representing user attributes and values which need to be recorded.
     """
 
-    user_event = UserEventFactory.create_impression_event(
+    user_event = user_event_factory.UserEventFactory.create_impression_event(
       project_config,
       experiment,
       variation.id,
@@ -180,9 +176,9 @@ class Optimizely(object):
     # This notification is deprecated and new Decision notifications
     # are sent via their respective method calls.
     if len(self.notification_center.notification_listeners[enums.NotificationTypes.ACTIVATE]) > 0:
-      impression_event = EventFactory.create_log_event(user_event, self.logger)
+      log_event = event_factory.EventFactory.create_log_event(user_event, self.logger)
       self.notification_center.send_notifications(enums.NotificationTypes.ACTIVATE, experiment,
-                                                  user_id, attributes, variation, impression_event.__dict__)
+                                                  user_id, attributes, variation, log_event.__dict__)
 
   def _get_feature_variable_for_type(self,
                                      project_config,
@@ -373,7 +369,7 @@ class Optimizely(object):
       self.logger.info('Not tracking user "%s" for event "%s".' % (user_id, event_key))
       return
 
-    user_event = UserEventFactory.create_conversion_event(
+    user_event = user_event_factory.UserEventFactory.create_conversion_event(
       project_config,
       event_key,
       user_id,
@@ -385,9 +381,9 @@ class Optimizely(object):
     self.logger.info('Tracking event "%s" for user "%s".' % (event_key, user_id))
 
     if len(self.notification_center.notification_listeners[enums.NotificationTypes.TRACK]) > 0:
-      conversion_event = EventFactory.create_log_event(user_event, self.logger)
+      log_event = event_factory.EventFactory.create_log_event(user_event, self.logger)
       self.notification_center.send_notifications(enums.NotificationTypes.TRACK, event_key, user_id,
-                                                    attributes, event_tags, conversion_event.__dict__)
+                                                    attributes, event_tags, log_event.__dict__)
 
   def get_variation(self, experiment_key, user_id, attributes=None):
     """ Gets variation where user will be bucketed.

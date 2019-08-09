@@ -11,26 +11,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import abc
 import threading
 import time
+
 from datetime import timedelta
 from six.moves import queue
 
 from .entity.user_event import UserEvent
 from .event_factory import EventFactory
+from ..closeable import Closeable
+from ..event_dispatcher import EventDispatcher as default_event_dispatcher
 from ..helpers import enums
+from ..logger import NoOpLogger
+
+ABC = abc.ABCMeta('ABC', (object,), {'__slots__': ()})
 
 
-class EventProcessor(object):
+class EventProcessor(ABC):
   """ Class encapsulating event_processor functionality. Override with your own processor
   providing process method. """
 
-  @staticmethod
+  @abc.abstractmethod
   def process(user_event):
-    pass  # pragma: no cover
+    pass
 
 
-class BatchEventProcessor(EventProcessor):
+class BatchEventProcessor(EventProcessor, Closeable):
   """
   BatchEventProcessor is a batched implementation of the EventProcessor.
 
@@ -50,24 +57,24 @@ class BatchEventProcessor(EventProcessor):
   def __init__(self,
                 event_dispatcher,
                 logger,
-                start=False,
+                default_start=False,
                 event_queue=None,
-                notification_center=None,
                 batch_size=None,
                 flush_interval=None,
-                timeout_interval=None):
-    self.event_dispatcher = event_dispatcher
-    self.logger = logger
+                timeout_interval=None,
+                notification_center=None):
+    self.event_dispatcher = event_dispatcher or default_event_dispatcher
+    self.logger = logger or NoOpLogger()
     self.event_queue = event_queue or queue.Queue(maxsize=self._DEFAULT_QUEUE_CAPACITY)
-    self.notification_center = notification_center
     self.batch_size = batch_size or self._DEFAULT_BATCH_SIZE
     self.flush_interval = flush_interval or self._DEFAULT_FLUSH_INTERVAL
     self.timeout_interval = timeout_interval or self._DEFAULT_TIMEOUT_INTERVAL
+    self.notification_center = notification_center
     self._disposed = False
     self._is_started = False
     self._current_batch = list()
 
-    if start is True:
+    if default_start is True:
       self.start()
 
   @property
@@ -110,11 +117,11 @@ class BatchEventProcessor(EventProcessor):
           continue
 
         if item == self._SHUTDOWN_SIGNAL:
-          self.logger.log('Received shutdown signal.')
+          self.logger.debug('Received shutdown signal.')
           break
 
         if item == self._FLUSH_SIGNAL:
-          self.logger.log('Received flush signal.')
+          self.logger.debug('Received flush signal.')
           self._flush_queue()
           continue
 
@@ -156,31 +163,17 @@ class BatchEventProcessor(EventProcessor):
     except Exception, e:
       self.logger.error('Error dispatching event: ' + str(log_event) + ' ' + str(e))
 
-  def stop(self):
-    """ Stops batch event processor. """
-    if self.disposed:
-      return
-
-    self.event_queue.put(self._SHUTDOWN_SIGNAL)
-    self.executor.join(self.timeout_interval.total_seconds())
-
-    if self.executor.isAlive():
-      self.logger.error('Timeout exceeded while attempting to close for ' + self.timeout_interval + ' ms.')
-
-    self._is_started = False
-    self.logger.warning('Stopping Scheduler.')
-
   def process(self, user_event):
-    self.logger.debug('Received user_event: ' + str(user_event))
-
-    if self.disposed:
-      self.logger.warning('Executor shutdown, not accepting tasks.')
+    if not isinstance(user_event, UserEvent):
+      self.logger.error('Provided event is in an invalid format.')
       return
+
+    self.logger.debug('Received user_event: ' + str(user_event))
 
     try:
       self.event_queue.put_nowait(user_event)
     except queue.Full:
-      self.logger.log('Payload not accepted by the queue.')
+      self.logger.log('Payload not accepted by the queue. Current size: {}'.format(str(self.event_queue.qsize())))
 
   def _add_to_batch(self, user_event):
     if self._should_split(user_event):
@@ -189,10 +182,8 @@ class BatchEventProcessor(EventProcessor):
 
     # Reset the deadline if starting a new batch.
     if len(self._current_batch) == 0:
-      self.flushing_interval_deadline = self._get_time_in_ms() + self._get_time_in_ms(
-        self.flush_interval.total_seconds()
-      )
-
+      self.flushing_interval_deadline = self._get_time_in_ms() + \
+        self._get_time_in_ms(self.flush_interval.total_seconds())
     with self.LOCK:
       self._current_batch.append(user_event)
     if len(self._current_batch) >= self.batch_size:
@@ -214,11 +205,17 @@ class BatchEventProcessor(EventProcessor):
     return False
 
   def close(self):
-    if self.disposed:
-      return
+    """ Stops and disposes batch event processor. """
+    self.logger.info('Start close.')
 
-    self.stop()
-    self._disposed = True
+    self.event_queue.put(self._SHUTDOWN_SIGNAL)
+    self.executor.join(self.timeout_interval.total_seconds())
+
+    if self.executor.isAlive():
+      self.logger.error('Timeout exceeded while attempting to close for ' + self.timeout_interval + ' ms.')
+
+    self.logger.warning('Stopping Scheduler.')
+    self._is_started = False
 
 
 class ForwardingEventProcessor(EventProcessor):
@@ -228,12 +225,14 @@ class ForwardingEventProcessor(EventProcessor):
     self.logger = logger
     self.notification_center = notification_center
 
-  def process(self, event):
-    if not isinstance(event, UserEvent):
-      # TODO: log error
+  def process(self, user_event):
+    if not isinstance(user_event, UserEvent):
+      self.logger.error('Provided event is in an invalid format.')
       return
 
-    log_event = EventFactory.create_log_event(event, self.logger)
+    self.logger.debug('Received user_event: ' + str(user_event))
+
+    log_event = EventFactory.create_log_event(user_event, self.logger)
 
     if self.notification_center is not None:
       self.notification_center.send_notifications(
