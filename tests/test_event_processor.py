@@ -17,13 +17,13 @@ from datetime import timedelta
 from six.moves import queue
 
 from . import base
-from optimizely.logger import SimpleLogger
-from optimizely.event.log_event import LogEvent
-from optimizely.event.entity.visitor import Visitor
 from optimizely.event.entity.decision import Decision
-from optimizely.event.user_event_factory import UserEventFactory
+from optimizely.event.entity.visitor import Visitor
 from optimizely.event.event_processor import BatchEventProcessor
+from optimizely.event.log_event import LogEvent
+from optimizely.event.user_event_factory import UserEventFactory
 from optimizely.helpers import enums
+from optimizely.logger import SimpleLogger
 
 
 class CanonicalEvent(object):
@@ -132,10 +132,10 @@ class BatchEventProcessorTest(base.BaseTest):
                                                  logger,
                                                  True,
                                                  self.event_queue,
-                                                 self.optimizely.notification_center,
                                                  self.MAX_BATCH_SIZE,
                                                  timedelta(milliseconds=self.MAX_DURATION_MS),
-                                                 timedelta(milliseconds=self.MAX_TIMEOUT_INTERVAL_MS)
+                                                 timedelta(milliseconds=self.MAX_TIMEOUT_INTERVAL_MS),
+                                                 self.optimizely.notification_center
                                                 )
 
   def test_drain_on_close(self):
