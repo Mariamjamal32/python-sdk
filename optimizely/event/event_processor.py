@@ -56,17 +56,17 @@ class BatchEventProcessor(EventProcessor):
                 logger,
                 default_start=False,
                 event_queue=None,
-                notification_center=None,
                 batch_size=None,
                 flush_interval=None,
-                timeout_interval=None):
+                timeout_interval=None,
+                notification_center=None):
     self.event_dispatcher = event_dispatcher
     self.logger = logger
     self.event_queue = event_queue or queue.Queue(maxsize=self._DEFAULT_QUEUE_CAPACITY)
-    self.notification_center = notification_center
     self.batch_size = batch_size or self._DEFAULT_BATCH_SIZE
     self.flush_interval = flush_interval or self._DEFAULT_FLUSH_INTERVAL
     self.timeout_interval = timeout_interval or self._DEFAULT_TIMEOUT_INTERVAL
+    self.notification_center = notification_center
     self._disposed = False
     self._is_started = False
     self._current_batch = list()
