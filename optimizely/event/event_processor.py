@@ -235,12 +235,14 @@ class ForwardingEventProcessor(EventProcessor):
     self.logger = logger
     self.notification_center = notification_center
 
-  def process(self, event):
-    if not isinstance(event, UserEvent):
-      # TODO: log error
+  def process(self, user_event):
+    if not isinstance(user_event, UserEvent):
+      self.logger.error('Provided event is in an invalid format.')
       return
 
-    log_event = EventFactory.create_log_event(event, self.logger)
+    self.logger.debug('Received user_event: ' + str(user_event))
+
+    log_event = EventFactory.create_log_event(user_event, self.logger)
 
     if self.notification_center is not None:
       self.notification_center.send_notifications(
