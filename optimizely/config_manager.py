@@ -304,7 +304,7 @@ class PollingConfigManager(StaticConfigManager):
     def _run(self):
         """ Triggered as part of the thread which fetches the datafile and sleeps until next update interval. """
         try:
-          while self.is_running and self.control_flag and not self.disposed:
+          while self.is_running and not self.disposed:
               self.fetch_datafile()
               time.sleep(self.update_interval)
         except (OSError, OverflowError) as err:
@@ -314,23 +314,26 @@ class PollingConfigManager(StaticConfigManager):
 
     def start(self):
         """ Start the config manager and the thread to periodically fetch datafile. """
-        if not self.is_running:
-            self.control_flag = True
+        if not self.is_running and not self.disposed:
             self._polling_thread.start()
 
-    def stop(self):
-        if not self.is_running:
-          self.logger.warning('Not pausing. Manager has not been started.')
-          return
+    # def stop(self):
+    #     if self.disposed:
+    #       return
 
-        self.logger.info('Pausing project watcher.')
-        self.control_flag = False
+    #     if not self.is_running:
+    #       self.logger.warning('Not pausing. Manager has not been started.')
+    #       return
+
+    #     # why do we pause then if it cannot be restarted?
+    #     self.logger.info('Pausing project watcher.')
+    #     self.control_flag = False
 
     def close(self):
         if self.disposed:
           return
 
-        self.stop()
+        # self.stop()
         # TODO: confirm timeout interval for closing thread
         self._polling_thread.join(2)
 
