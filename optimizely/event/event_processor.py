@@ -66,9 +66,11 @@ class BatchEventProcessor(EventProcessor, Closeable):
     self.event_dispatcher = event_dispatcher or default_event_dispatcher
     self.logger = logger or NoOpLogger()
     self.event_queue = event_queue or queue.Queue(maxsize=self._DEFAULT_QUEUE_CAPACITY)
-    self.batch_size = batch_size or self._DEFAULT_BATCH_SIZE
-    self.flush_interval = flush_interval or self._DEFAULT_FLUSH_INTERVAL
-    self.timeout_interval = timeout_interval or self._DEFAULT_TIMEOUT_INTERVAL
+    self.batch_size = batch_size if batch_size is not None and batch_size > 0 else self._DEFAULT_BATCH_SIZE
+    self.flush_interval = timedelta(milliseconds=flush_interval) if flush_interval is not None and flush_interval > 0 \
+                            else self._DEFAULT_FLUSH_INTERVAL
+    self.timeout_interval = timedelta(milliseconds=timeout_interval) if timeout_interval is not None and \
+                            timeout_interval > 0 else self._DEFAULT_TIMEOUT_INTERVAL
     self.notification_center = notification_center
     self._disposed = False
     self._is_started = False
@@ -184,6 +186,7 @@ class BatchEventProcessor(EventProcessor, Closeable):
     if len(self._current_batch) == 0:
       self.flushing_interval_deadline = self._get_time_in_ms() + \
         self._get_time_in_ms(self.flush_interval.total_seconds())
+
     with self.LOCK:
       self._current_batch.append(user_event)
     if len(self._current_batch) >= self.batch_size:
