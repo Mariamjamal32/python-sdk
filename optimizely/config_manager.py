@@ -317,24 +317,10 @@ class PollingConfigManager(StaticConfigManager):
         if not self.is_running and not self.disposed:
             self._polling_thread.start()
 
-    # def stop(self):
-    #     if self.disposed:
-    #       return
-
-    #     if not self.is_running:
-    #       self.logger.warning('Not pausing. Manager has not been started.')
-    #       return
-
-    #     # why do we pause then if it cannot be restarted?
-    #     self.logger.info('Pausing project watcher.')
-    #     self.control_flag = False
-
     def close(self):
         if self.disposed:
           return
 
-        # self.stop()
-        # TODO: confirm timeout interval for closing thread
         self._polling_thread.join(2)
 
         if self.is_running:
