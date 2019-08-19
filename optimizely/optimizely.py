@@ -17,6 +17,7 @@ from . import entities
 from . import event_builder
 from . import exceptions
 from . import logger as _logging
+from .closeable import Closeable
 from .config_manager import StaticConfigManager, PollingConfigManager
 from .error_handler import NoOpErrorHandler as noop_error_handler
 from .event import event_factory, user_event_factory
@@ -763,7 +764,7 @@ class Optimizely(object):
   def _try_close(self, obj):
     """ Helper method which checks if obj implements close method and calls close() on it. """
 
-    if not callable(getattr(obj.__class__, 'close', None)):
+    if not isinstance(obj, Closeable):
       return
 
     obj.close()
