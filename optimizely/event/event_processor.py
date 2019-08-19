@@ -66,9 +66,9 @@ class BatchEventProcessor(EventProcessor, Closeable):
     self.event_dispatcher = event_dispatcher or default_event_dispatcher
     self.logger = _logging.adapt_logger(logger or _logging.NoOpLogger())
     self.event_queue = event_queue or queue.Queue(maxsize=self._DEFAULT_QUEUE_CAPACITY)
-    self.batch_size = batch_size if self._validate_intantiation_props(batch_size) else self._DEFAULT_BATCH_SIZE
-    self.flush_interval = timedelta(milliseconds=flush_interval) if self._validate_intantiation_props(flush_interval) \
-                            else self._DEFAULT_FLUSH_INTERVAL
+    self.batch_size = batch_size if self._validate_intantiation_props(batch_size, 1) else self._DEFAULT_BATCH_SIZE
+    self.flush_interval = timedelta(milliseconds=flush_interval) \
+                            if self._validate_intantiation_props(flush_interval, 1) else self._DEFAULT_FLUSH_INTERVAL
     self.timeout_interval = timedelta(milliseconds=timeout_interval) \
                               if self._validate_intantiation_props(timeout_interval) else self._DEFAULT_TIMEOUT_INTERVAL
     self.notification_center = notification_center
@@ -87,8 +87,8 @@ class BatchEventProcessor(EventProcessor, Closeable):
   def disposed(self):
     return self._disposed
 
-  def _validate_intantiation_props(self, prop):
-    if prop is None or prop < 0 or not validator.is_finite_number(prop):
+  def _validate_intantiation_props(self, prop, default=0):
+    if prop is None or prop < default or not validator.is_finite_number(prop):
       return False
 
     return True
@@ -138,7 +138,7 @@ class BatchEventProcessor(EventProcessor, Closeable):
         if isinstance(item, UserEvent):
           self._add_to_batch(item)
 
-    except Exception, exception:
+    except Exception as exception:
       self.logger.error('Uncaught exception processing buffer. Error: ' + str(exception))
 
     finally:
