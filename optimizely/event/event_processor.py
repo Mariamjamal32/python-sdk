@@ -18,7 +18,7 @@ import time
 from datetime import timedelta
 from six.moves import queue
 
-from .entity.user_event import UserEvent
+from .user_event import UserEvent
 from .event_factory import EventFactory
 from optimizely import logger as _logging
 from optimizely.closeable import Closeable

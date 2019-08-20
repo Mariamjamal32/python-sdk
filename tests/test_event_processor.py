@@ -19,8 +19,7 @@ from six.moves import queue
 
 from . import base
 from optimizely.logger import SimpleLogger
-from optimizely.event.entity.visitor import Visitor
-from optimizely.event.entity.decision import Decision
+from optimizely.event.event_payload import Decision, Visitor
 from optimizely.event.user_event_factory import UserEventFactory
 from optimizely.event.event_processor import BatchEventProcessor
 
