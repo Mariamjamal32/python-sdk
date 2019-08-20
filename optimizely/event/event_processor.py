@@ -89,7 +89,7 @@ class BatchEventProcessor(EventProcessor, Closeable):
 
   def _validate_intantiation_props(self, prop, prop_name):
     if prop is None or prop < 1 or not validator.is_finite_number(prop):
-      self.logger.info('{} value is invalid. Using default value.'.format(prop_name))
+      self.logger.info('Using default value for {}.'.format(prop_name))
       return False
 
     return True
