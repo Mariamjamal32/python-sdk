@@ -64,11 +64,14 @@ class BatchEventProcessor(EventProcessor, Closeable):
     self.event_dispatcher = event_dispatcher or default_event_dispatcher
     self.logger = _logging.adapt_logger(logger or _logging.NoOpLogger())
     self.event_queue = event_queue or queue.Queue(maxsize=self._DEFAULT_QUEUE_CAPACITY)
-    self.batch_size = batch_size if self._validate_intantiation_props(batch_size, 1) else self._DEFAULT_BATCH_SIZE
+    self.batch_size = batch_size if self._validate_intantiation_props(batch_size, 'batch_size') \
+                        else self._DEFAULT_BATCH_SIZE
     self.flush_interval = timedelta(milliseconds=flush_interval) \
-                            if self._validate_intantiation_props(flush_interval, 1) else self._DEFAULT_FLUSH_INTERVAL
+                            if self._validate_intantiation_props(flush_interval, 'flush_interval') \
+                            else self._DEFAULT_FLUSH_INTERVAL
     self.timeout_interval = timedelta(milliseconds=timeout_interval) \
-                              if self._validate_intantiation_props(timeout_interval) else self._DEFAULT_TIMEOUT_INTERVAL
+                              if self._validate_intantiation_props(timeout_interval, 'timeout_interval') \
+                              else self._DEFAULT_TIMEOUT_INTERVAL
     self._disposed = False
     self._is_started = False
     self._current_batch = list()
@@ -84,8 +87,9 @@ class BatchEventProcessor(EventProcessor, Closeable):
   def disposed(self):
     return self._disposed
 
-  def _validate_intantiation_props(self, prop, default=0):
-    if prop is None or prop < default or not validator.is_finite_number(prop):
+  def _validate_intantiation_props(self, prop, prop_name):
+    if prop is None or prop < 1 or not validator.is_finite_number(prop):
+      self.logger.info('{} value is invalid. Using default value.'.format(prop_name))
       return False
 
     return True
@@ -214,7 +218,7 @@ class BatchEventProcessor(EventProcessor, Closeable):
     self.executor.join(self.timeout_interval.total_seconds())
 
     if self.executor.isAlive():
-      self.logger.error('Timeout exceeded while attempting to close for ' + self.timeout_interval + ' ms.')
+      self.logger.error('Timeout exceeded while attempting to close for ' + str(self.timeout_interval) + ' ms.')
 
     self.logger.warning('Stopping Scheduler.')
     self._is_started = False
