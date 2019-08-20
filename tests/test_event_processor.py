@@ -18,7 +18,9 @@ from datetime import timedelta
 from six.moves import queue
 
 from . import base
+from optimizely.logger import SimpleLogger
 from optimizely.event.event_payload import Decision, Visitor
+from optimizely.event.user_event_factory import UserEventFactory
 from optimizely.event.event_processor import BatchEventProcessor
 from optimizely.event.log_event import LogEvent
 from optimizely.event.user_event_factory import UserEventFactory
@@ -380,7 +382,7 @@ class BatchEventProcessorTest(base.BaseTest):
 
     # default timeout interval is 5s.
     self.assertEqual(self._event_processor.timeout_interval, timedelta(seconds=5))
-
+    mock_config_logging.info.assert_called_with('Using default value for timeout_interval.')
 
   def test_notification_center(self):
 

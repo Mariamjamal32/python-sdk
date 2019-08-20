@@ -74,6 +74,7 @@ class BatchEventProcessor(EventProcessor, Closeable):
     self.timeout_interval = timedelta(milliseconds=timeout_interval) \
                               if self._validate_intantiation_props(timeout_interval, 'timeout_interval') \
                               else self._DEFAULT_TIMEOUT_INTERVAL
+
     self.notification_center = notification_center
     self._disposed = False
     self._is_started = False
@@ -91,7 +92,7 @@ class BatchEventProcessor(EventProcessor, Closeable):
     return self._disposed
 
   def _validate_intantiation_props(self, prop, prop_name):
-    if prop is None or prop < 1 or not isinstance(prop, int) or not validator.is_finite_number(prop):
+    if prop is None or not isinstance(prop, int) or prop < 1 or not validator.is_finite_number(prop):
       self.logger.info('Using default value for {}.'.format(prop_name))
       return False
 
@@ -174,7 +175,7 @@ class BatchEventProcessor(EventProcessor, Closeable):
 
     try:
       self.event_dispatcher.dispatch_event(log_event)
-    except Exception, e:
+    except Exception as e:
       self.logger.error('Error dispatching event: ' + str(log_event) + ' ' + str(e))
 
   def process(self, user_event):
