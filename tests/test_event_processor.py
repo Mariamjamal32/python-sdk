@@ -297,7 +297,7 @@ class BatchEventProcessorTest(base.BaseTest):
 
     # default batch size is 10.
     self.assertEqual(self._event_processor.batch_size, 10)
-    mock_config_logging.info.assert_called_with('batch_size value is invalid. Using default value.')
+    mock_config_logging.info.assert_called_with('Using default value for batch_size.')
 
   def test_init__NaN_batch_size(self):
     event_dispatcher = TestEventDispatcher()
@@ -314,7 +314,7 @@ class BatchEventProcessorTest(base.BaseTest):
 
     # default batch size is 10.
     self.assertEqual(self._event_processor.batch_size, 10)
-    mock_config_logging.info.assert_called_with('batch_size value is invalid. Using default value.')
+    mock_config_logging.info.assert_called_with('Using default value for batch_size.')
 
   def test_init__invalid_flush_interval(self):
     event_dispatcher = TestEventDispatcher()
@@ -331,7 +331,7 @@ class BatchEventProcessorTest(base.BaseTest):
 
     # default flush interval is 30s.
     self.assertEqual(self._event_processor.flush_interval, timedelta(seconds=30))
-    mock_config_logging.info.assert_called_with('flush_interval value is invalid. Using default value.')
+    mock_config_logging.info.assert_called_with('Using default value for flush_interval.')
 
   def test_init__NaN_flush_interval(self):
     event_dispatcher = TestEventDispatcher()
@@ -348,7 +348,7 @@ class BatchEventProcessorTest(base.BaseTest):
 
     # default flush interval is 30s.
     self.assertEqual(self._event_processor.flush_interval, timedelta(seconds=30))
-    mock_config_logging.info.assert_called_with('flush_interval value is invalid. Using default value.')
+    mock_config_logging.info.assert_called_with('Using default value for flush_interval.')
 
   def test_init__invalid_timeout_interval(self):
     event_dispatcher = TestEventDispatcher()
@@ -365,7 +365,7 @@ class BatchEventProcessorTest(base.BaseTest):
 
     # default timeout interval is 5s.
     self.assertEqual(self._event_processor.timeout_interval, timedelta(seconds=5))
-    mock_config_logging.info.assert_called_with('timeout_interval value is invalid. Using default value.')
+    mock_config_logging.info.assert_called_with('Using default value for timeout_interval.')
 
   def test_init__NaN_timeout_interval(self):
     event_dispatcher = TestEventDispatcher()
@@ -382,7 +382,7 @@ class BatchEventProcessorTest(base.BaseTest):
 
     # default timeout interval is 5s.
     self.assertEqual(self._event_processor.timeout_interval, timedelta(seconds=5))
-    mock_config_logging.info.assert_called_with('timeout_interval value is invalid. Using default value.')
+
 
   def test_notification_center(self):
 
