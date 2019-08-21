@@ -781,7 +781,7 @@ class OptimizelyTest(base.BaseTest):
       }
 
     self.assertTrue(
-      expected_attr in mock_process.call_args[0][0].visitor_attributes
+      expected_attr in [x.__dict__ for x in mock_process.call_args[0][0].visitor_attributes]
     )
 
     mock_process.reset()
@@ -798,7 +798,7 @@ class OptimizelyTest(base.BaseTest):
       }
 
     self.assertTrue(
-      expected_attr in mock_process.call_args[0][0].visitor_attributes
+      expected_attr in [x.__dict__ for x in mock_process.call_args[0][0].visitor_attributes]
     )
 
   def test_activate__with_attributes__typed_audience_mismatch(self):
@@ -837,11 +837,11 @@ class OptimizelyTest(base.BaseTest):
       }
 
     self.assertTrue(
-      expected_attr_1 in mock_process.call_args[0][0].visitor_attributes
+      expected_attr_1 in [x.__dict__ for x in mock_process.call_args[0][0].visitor_attributes]
     )
 
     self.assertTrue(
-      expected_attr_2 in mock_process.call_args[0][0].visitor_attributes
+      expected_attr_2 in [x.__dict__ for x in mock_process.call_args[0][0].visitor_attributes]
     )
 
   def test_activate__with_attributes__complex_audience_mismatch(self):
@@ -1115,7 +1115,7 @@ class OptimizelyTest(base.BaseTest):
     }
 
     self.assertTrue(
-      expected_attr in mock_process.call_args[0][0].visitor_attributes
+      expected_attr in [x.__dict__ for x in mock_process.call_args[0][0].visitor_attributes]
     )
 
   def test_track__with_attributes__typed_audience_mismatch(self):
@@ -1150,7 +1150,7 @@ class OptimizelyTest(base.BaseTest):
     }
 
     self.assertTrue(
-      expected_attr_1 in mock_process.call_args[0][0].visitor_attributes
+      expected_attr_1 in [x.__dict__ for x in mock_process.call_args[0][0].visitor_attributes]
     )
 
     expected_attr_2 = {
@@ -1161,7 +1161,7 @@ class OptimizelyTest(base.BaseTest):
     }
 
     self.assertTrue(
-      expected_attr_2 in mock_process.call_args[0][0].visitor_attributes
+      expected_attr_2 in [x.__dict__ for x in mock_process.call_args[0][0].visitor_attributes]
     )
 
   def test_track__with_attributes__complex_audience_mismatch(self):
