@@ -11,18 +11,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import mock
 import time
 from datetime import timedelta
 from six.moves import queue
 
 from . import base
-from optimizely.event.event_payload import Decision, Visitor
-from optimizely.event.event_processor import BatchEventProcessor
-from optimizely.event.event_processor import ForwardingEventProcessor
-from optimizely.event.log_event import LogEvent
+from optimizely.event.payload import Decision, Visitor
+from optimizely.event.event_processor import BatchEventProcessor, ForwardingEventProcessor
 from optimizely.event.event_factory import EventFactory
+from optimizely.event.log_event import LogEvent
 from optimizely.event.user_event_factory import UserEventFactory
 from optimizely.helpers import enums
 from optimizely.logger import SimpleLogger
@@ -74,7 +72,7 @@ class TestEventDispatcher(object):
 
   def dispatch_event(self, actual_log_event):
     visitors = []
-    log_event_params = json.loads(actual_log_event.params)
+    log_event_params = actual_log_event.params
 
     if 'visitors' in log_event_params:
 
