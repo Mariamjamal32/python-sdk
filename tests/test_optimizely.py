@@ -50,17 +50,6 @@ class OptimizelyTest(base.BaseTest):
       return isinstance(s, str)
     strTest = isstr
 
-  def _dict_clean(self, obj):
-    """ Helper method to remove keys from dictionary with None values. """
-
-    result = {}
-    for k, v in obj:
-      if v is None and k in ['revenue', 'value', 'tags', 'decisions']:
-        continue
-      else:
-        result[k] = v
-    return result
-
   def _validate_event_object(self, event_obj, expected_url, expected_params, expected_verb, expected_headers):
     """ Helper method to validate properties of the event object. """
 
