@@ -66,7 +66,7 @@ class OptimizelyTest(base.BaseTest):
 
     self.assertEqual(expected_url, event_obj.get('url'))
 
-    event_params = json.loads(event_obj.get('params'), object_pairs_hook=self._dict_clean)
+    event_params = event_obj.get('params')
 
     expected_params['visitors'][0]['attributes'] = \
       sorted(expected_params['visitors'][0]['attributes'], key=itemgetter('key'))
@@ -79,7 +79,7 @@ class OptimizelyTest(base.BaseTest):
   def _validate_event_object_event_tags(self, event_obj, expected_event_metric_params, expected_event_features_params):
     """ Helper method to validate properties of the event object related to event tags. """
 
-    event_params = json.loads(event_obj.get('params'), object_pairs_hook=self._dict_clean)
+    event_params = event_obj.get('params')
 
     # get event metrics from the created event object
     event_metrics = event_params['visitors'][0]['snapshots'][0]['events'][0]['tags']
@@ -328,7 +328,7 @@ class OptimizelyTest(base.BaseTest):
     )
     self.assertEqual(1, mock_process.call_count)
 
-    self._validate_event_object(json.loads(json.dumps(log_event.__dict__, default=lambda o: o.__dict__)),
+    self._validate_event_object(log_event.__dict__,
                                 'https://logx.optimizely.com/v1/events',
                                 expected_params, 'POST', {'Content-Type': 'application/json'})
 
@@ -682,7 +682,7 @@ class OptimizelyTest(base.BaseTest):
                                                self.project_config.get_experiment_from_key('test_experiment'),
                                                'test_user', {'test_attribute': 'test_value'})
     self.assertEqual(1, mock_process.call_count)
-    self._validate_event_object(json.loads(json.dumps(log_event.__dict__, default=lambda o: o.__dict__)),
+    self._validate_event_object(log_event.__dict__,
                                 'https://logx.optimizely.com/v1/events',
                                 expected_params, 'POST', {'Content-Type': 'application/json'})
 
@@ -760,7 +760,7 @@ class OptimizelyTest(base.BaseTest):
       self.project_config, self.project_config.get_experiment_from_key('test_experiment'), 'test_user', 'test_user'
     )
     self.assertEqual(1, mock_process.call_count)
-    self._validate_event_object(json.loads(json.dumps(log_event.__dict__, default=lambda o: o.__dict__)),
+    self._validate_event_object(log_event.__dict__,
                                 'https://logx.optimizely.com/v1/events',
                                 expected_params, 'POST', {'Content-Type': 'application/json'})
 
@@ -902,7 +902,7 @@ class OptimizelyTest(base.BaseTest):
     log_event = EventFactory.create_log_event(mock_process.call_args[0][0], self.optimizely.logger)
 
     self.assertEqual(1, mock_process.call_count)
-    self._validate_event_object(json.loads(json.dumps(log_event.__dict__, default=lambda o: o.__dict__)),
+    self._validate_event_object(log_event.__dict__,
                                 'https://logx.optimizely.com/v1/events',
                                 expected_params, 'POST', {'Content-Type': 'application/json'})
 
@@ -964,7 +964,7 @@ class OptimizelyTest(base.BaseTest):
                                                'test_user', {'test_attribute': 'test_value',
                                                              '$opt_bucketing_id': 'user_bucket_value'})
     self.assertEqual(1, mock_process.call_count)
-    self._validate_event_object(json.loads(json.dumps(log_event.__dict__, default=lambda o: o.__dict__)),
+    self._validate_event_object(log_event.__dict__,
                                 'https://logx.optimizely.com/v1/events',
                                 expected_params, 'POST', {'Content-Type': 'application/json'})
 
@@ -1091,7 +1091,7 @@ class OptimizelyTest(base.BaseTest):
     log_event = EventFactory.create_log_event(mock_process.call_args[0][0], self.optimizely.logger)
 
     self.assertEqual(1, mock_process.call_count)
-    self._validate_event_object(json.loads(json.dumps(log_event.__dict__, default=lambda o: o.__dict__)),
+    self._validate_event_object(log_event.__dict__,
                                 'https://logx.optimizely.com/v1/events',
                                 expected_params, 'POST', {'Content-Type': 'application/json'})
 
@@ -1222,7 +1222,7 @@ class OptimizelyTest(base.BaseTest):
     log_event = EventFactory.create_log_event(mock_process.call_args[0][0], self.optimizely.logger)
 
     self.assertEqual(1, mock_process.call_count)
-    self._validate_event_object(json.loads(json.dumps(log_event.__dict__, default=lambda o: o.__dict__)),
+    self._validate_event_object(log_event.__dict__,
                                 'https://logx.optimizely.com/v1/events',
                                 expected_params, 'POST', {'Content-Type': 'application/json'})
 
@@ -1290,7 +1290,7 @@ class OptimizelyTest(base.BaseTest):
     log_event = EventFactory.create_log_event(mock_process.call_args[0][0], self.optimizely.logger)
 
     self.assertEqual(1, mock_process.call_count)
-    self._validate_event_object(json.loads(json.dumps(log_event.__dict__, default=lambda o: o.__dict__)),
+    self._validate_event_object(log_event.__dict__,
                                 'https://logx.optimizely.com/v1/events',
                                 expected_params, 'POST', {'Content-Type': 'application/json'})
 
@@ -1339,7 +1339,7 @@ class OptimizelyTest(base.BaseTest):
     log_event = EventFactory.create_log_event(mock_process.call_args[0][0], self.optimizely.logger)
 
     self.assertEqual(1, mock_process.call_count)
-    self._validate_event_object(json.loads(json.dumps(log_event.__dict__, default=lambda o: o.__dict__)),
+    self._validate_event_object(log_event.__dict__,
                                 'https://logx.optimizely.com/v1/events',
                                 expected_params, 'POST', {'Content-Type': 'application/json'})
 
@@ -1367,7 +1367,7 @@ class OptimizelyTest(base.BaseTest):
 
     log_event = EventFactory.create_log_event(mock_process.call_args[0][0], self.optimizely.logger)
 
-    self._validate_event_object_event_tags(json.loads(json.dumps(log_event.__dict__, default=lambda o: o.__dict__)),
+    self._validate_event_object_event_tags(log_event.__dict__,
                                            expected_event_metrics_params,
                                            expected_event_features_params)
 
@@ -1419,7 +1419,7 @@ class OptimizelyTest(base.BaseTest):
     log_event = EventFactory.create_log_event(mock_process.call_args[0][0], self.optimizely.logger)
 
     self.assertEqual(1, mock_process.call_count)
-    self._validate_event_object(json.loads(json.dumps(log_event.__dict__, default=lambda o: o.__dict__)),
+    self._validate_event_object(log_event.__dict__,
                                 'https://logx.optimizely.com/v1/events',
                                 expected_params, 'POST', {'Content-Type': 'application/json'})
 
@@ -1466,7 +1466,7 @@ class OptimizelyTest(base.BaseTest):
     log_event = EventFactory.create_log_event(mock_process.call_args[0][0], self.optimizely.logger)
 
     self.assertEqual(1, mock_process.call_count)
-    self._validate_event_object(json.loads(json.dumps(log_event.__dict__, default=lambda o: o.__dict__)),
+    self._validate_event_object(log_event.__dict__,
                                 'https://logx.optimizely.com/v1/events',
                                 expected_params, 'POST', {'Content-Type': 'application/json'})
 
@@ -1817,7 +1817,7 @@ class OptimizelyTest(base.BaseTest):
     
     # Check that impression event is sent
     self.assertEqual(1, mock_process.call_count)
-    self._validate_event_object(json.loads(json.dumps(log_event.__dict__, default=lambda o: o.__dict__)),
+    self._validate_event_object(log_event.__dict__,
                                 'https://logx.optimizely.com/v1/events',
                                 expected_params, 'POST', {'Content-Type': 'application/json'})
 
@@ -1901,7 +1901,7 @@ class OptimizelyTest(base.BaseTest):
 
     # Check that impression event is sent
     self.assertEqual(1, mock_process.call_count)
-    self._validate_event_object(json.loads(json.dumps(log_event.__dict__, default=lambda o: o.__dict__)),
+    self._validate_event_object(log_event.__dict__,
                                 'https://logx.optimizely.com/v1/events',
                                 expected_params, 'POST', {'Content-Type': 'application/json'})
 
