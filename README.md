@@ -142,6 +142,11 @@ notifications, use:
 
 `notification_center.add_notification_listener(NotificationTypes.OPTIMIZELY_CONFIG_UPDATE, update_callback)`
 
+#### EventProcessor
+
+`EventProcessor` provides an intermediary processing stage within event production. It is assumed that the EventProcessor dispatches events via a provided EventDispatcher. Examples include `ForwardingEventProcessor` and `BatchEventProcessor`.
+[ForwardingEventProcessor](https://github.com/optimizely/python-sdk/blob/mnoman/AddBatchEP/optimizely/event/event_processor.py) is used as the default implementation of `EventProcessor` if none is provided by the client.
+
 #### BatchEventProcessor
 
 The [BatchEventProcessor](https://github.com/optimizely/python-sdk/blob/mnoman/AddBatchEP/optimizely/event/event_processor.py) is a batched implementation of the `EventProcessor`  
