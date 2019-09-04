@@ -142,6 +142,52 @@ notifications, use:
 
 `notification_center.add_notification_listener(NotificationTypes.OPTIMIZELY_CONFIG_UPDATE, update_callback)`
 
+#### BatchEventProcessor
+
+The [BatchEventProcessor](https://github.com/optimizely/python-sdk/blob/mnoman/AddBatchEP/optimizely/event/event_processor.py) is a batched implementation of the `EventProcessor`  
+
+    * Events passed to the `BatchEventProcessor` are immediately added to a `Queue`.
+
+    * The `BatchEventProcessor` maintains a single consumer thread that pulls events off of the `Queue` and buffers them for either a configured batch size or for a maximum duration before the resulting `LogEvent` is sent to the `NotificationCenter`.
+
+##### Use BatchEventProcessor
+~~~~~~
+event_processor = BatchEventProcessor(
+    event_dispatcher,
+    logger,
+    default_start=False,
+    event_queue=None,
+    batch_size=None,
+    flush_interval=None,
+    timeout_interval=None,
+    notification_center=None
+)
+~~~~~~  
+
+#### Advanced configuration
+
+The following properties can be set to override the default
+configurations for `BatchEventProcessor`.
+
+  | **Property Name** | **Default Value** | **Description**
+| -- | -- | --
+| `default_start` | False | If set to `True`, starts the consumer thread upon initialization of `BatchEventProcessor`.
+| `event_queue` | 1000 | `queue.Queue(maxsize=1000)`. Queues individual events to be batched and dispatched by the executor.
+| `event_dispatcher` | None | Used to dispatch event payload to Optimizely.
+| `batch_size` | 10 | The maximum number of events to batch before dispatching. Once this number is reached, all queued events are flushed and sent to Optimizely.
+| `flush_interval` | 30000 ms | Maximum time to wait before batching and dispatching events in milliseconds.
+| `timeout_interval` | 5000 ms | Maximum time to wait before joining the consumer thread.
+| `notification_center` | None | Notification center instance to be used to trigger any notifications.
+
+#### Close Optimizely
+If you enable event batching, make sure that you call the `close` method, `optimizely.close()`, prior to exiting. This ensures that queued events are flushed as soon as possible to avoid any data loss.
+
+ **Note:** Because the Optimizely client maintains a buffer of queued events, we recommend that you call `close()` on the Optimizely instance before shutting down your application or whenever dereferencing the instance.
+
+ | **Method** | **Description**
+| -- | --
+| `close()` | Stops all timers and flushes the event queue. This method will also stop any timers that are happening for the datafile manager.
+
 For Further details see the Optimizely [Full Stack documentation](https://docs.developers.optimizely.com/full-stack/docs) to learn how to set up your first Python project and use the SDK.
 
 Development
