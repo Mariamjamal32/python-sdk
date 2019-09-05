@@ -247,7 +247,7 @@ class PollingConfigManager(StaticConfigManager):
             )
 
         # If polling interval is less than minimum allowed interval then set it to default update interval.
-        if update_interval < enums.ConfigManager.MIN_UPDATE_INTERVAL:
+        if update_interval <= 0:
             self.logger.debug('update_interval value {} too small. Defaulting to {}'.format(
                 update_interval,
                 enums.ConfigManager.DEFAULT_UPDATE_INTERVAL)
