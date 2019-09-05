@@ -41,7 +41,7 @@ class ConfigManager(object):
   # Default config update interval of 5 minutes
   DEFAULT_UPDATE_INTERVAL = 5 * 60
   # Minimum config update interval of 1 second
-  MIN_UPDATE_INTERVAL = 1
+  MIN_UPDATE_INTERVAL = 0
   # Time in seconds before which request for datafile times out
   REQUEST_TIMEOUT = 10
 
