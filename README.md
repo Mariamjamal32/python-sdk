@@ -115,6 +115,7 @@ successful datafile poll.
 
 **update_interval** The update_interval is used to specify a fixed
 delay in seconds between consecutive HTTP requests for the datafile.
+It is required to be greater than zero.
 
 **url_template** A string with placeholder `{sdk_key}` can be provided
 so that this template along with the provided sdk key is
@@ -178,20 +179,13 @@ configurations for `BatchEventProcessor`.
 | -- | -- | --
 | `default_start` | False | If set to `True`, starts the consumer thread upon initialization of `BatchEventProcessor`.
 | `event_queue` | 1000 | `queue.Queue(maxsize=1000)`. Queues individual events to be batched and dispatched by the executor.
-| `event_dispatcher` | None | Used to dispatch event payload to Optimizely.
+| `event_dispatcher` | None | Used to dispatch event payload to Optimizely. If not set, default EventDispatcher will be used.
 | `batch_size` | 10 | The maximum number of events to batch before dispatching. Once this number is reached, all queued events are flushed and sent to Optimizely.
 | `flush_interval` | 30000 ms | Maximum time to wait before batching and dispatching events in milliseconds.
 | `timeout_interval` | 5000 ms | Maximum time to wait before joining the consumer thread.
 | `notification_center` | None | Notification center instance to be used to trigger any notifications.
 
-#### Close Optimizely
-If you enable event batching, make sure that you call the `close` method, `optimizely.close()`, prior to exiting. This ensures that queued events are flushed as soon as possible to avoid any data loss.
-
- **Note:** Because the Optimizely client maintains a buffer of queued events, we recommend that you call `close()` on the Optimizely instance before shutting down your application or whenever dereferencing the instance.
-
- | **Method** | **Description**
-| -- | --
-| `close()` | Stops all timers and flushes the event queue. This method will also stop any timers that are happening for the datafile manager.
+If you enable event batching, make sure that you call the `flush` method, `event_processor.flush()`, prior to exiting. This ensures that queued events are flushed as soon as possible to avoid any data loss.
 
 For Further details see the Optimizely [Full Stack documentation](https://docs.developers.optimizely.com/full-stack/docs) to learn how to set up your first Python project and use the SDK.
 
